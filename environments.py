@@ -28,11 +28,9 @@ class EnvironmentBase(object):
             self.light.set_mode(0)
 
         elif name == 'normal':
-            self.light.set_mode(1)
             self.light.set_color(0, 255, 0)
 
         elif name == 'intruder':
-            self.light.set_mode(1)
             self.light.set_color(255, 0, 0)
 
         else:
