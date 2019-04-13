@@ -35,8 +35,6 @@ class HueWrapperV1(HueWrapperBase):
         self.converter = Converter(GamutC)
 
         # reset lamp
-        self.set_mode(1)
-        self.set_color(255, 255, 255)
         self.set_mode(0)
         time.sleep(0.5)
 
@@ -99,7 +97,7 @@ class HueWrapperV1(HueWrapperBase):
         void
         """
         xy = self.converter.rgb_to_xy(r, g, b)
-        data = '{"xy":[' + str(xy)[1:-1] + ']}'
+        data = '{"on":true, "xy":[' + str(xy)[1:-1] + ']}'
         self._send_command(self.url, data)
 
     def toggle_on_off(self):
@@ -140,7 +138,6 @@ class HueWrapperV1(HueWrapperBase):
         """
 
         # turn on for clean start
-        self.set_mode(1)
         self.set_color(r, g, b)
         time.sleep(1.0 / freq)
 
@@ -167,20 +164,16 @@ class HueWrapperV1(HueWrapperBase):
         void
         """
 
-        # turn on for clean start
-        self.set_mode(1)
-        time.sleep(1.0 / freq)
-
         if mode == 0:
             # run blinking loop
-            for i in range(0, int(dur * freq - 1)):
+            for i in range(0, int(dur * freq)):
                 self.set_color(randint(0, 255), randint(
                     0, 255), randint(0, 255))
                 time.sleep(1.0 / freq)
 
         elif mode == 1:
             # run blinking loop
-            for i in range(0, int(dur * freq / 3 - 1)):
+            for i in range(0, int(dur * freq / 3)):
                 self.set_color(0, 255, 0)
                 time.sleep(1.0 / freq)
                 self.set_color(0, 0, 255)
@@ -190,7 +183,7 @@ class HueWrapperV1(HueWrapperBase):
 
         elif mode == 2:
             # run blinking loop
-            for i in range(0, int(dur * freq / 6 - 1)):
+            for i in range(0, int(dur * freq / 6)):
                 self.set_color(255, 255, 0)
                 time.sleep(1.0 / freq)
                 self.set_color(0, 255, 0)
