@@ -7,36 +7,9 @@ from environments import EnvironmentIntruder, EnvironmentNormal, EnvironmentOff
 from events import Events
 from hue_wrapper_v1 import HueWrapperV1 as HueWrapper
 
-rekognition = boto3.client('rekognition')
 s3 = boto3.resource('s3')
 
-
 # ------------ Helper Functions ---------------
-
-def is_face_known(bucket, key, collection_id):
-    """
-    Parameters
-    ----------
-    bucket: the bucket from s3
-    key: the key from s3
-    collection_id (string): name of the collection
-
-    Returns
-    ------
-    bool: if found or not
-    """
-    response = rekognition.search_faces_by_image(
-        CollectionId=collection_id,
-        Image={
-            'S3Object': {
-                'Bucket': bucket,
-                'Name': key,
-            }
-        },
-        MaxFaces=10,
-    )
-
-    return response['FaceMatches'] != []
 
 
 def environment_handler(event, environments):
@@ -76,18 +49,17 @@ def environment_handler(event, environments):
 
 
 def lambda_handler(event, context):
-    '''Demonstrates S3 trigger that uses
-    Rekognition APIs to detect faces, labels and index faces in S3 Object.
     '''
-    # Get the object from the event
-    bucket = event['Records'][0]['s3']['bucket']['name']
-    key = urllib.unquote_plus(
-        event['Records'][0]['s3']['object']['key'].encode('utf8'))
+    handles events and changes environments accordingly
+    '''
 
+    # extract event from payload
+    print('the event:', event)
+    event = Events[event['event']]
+    print('the new event:', event)
+
+    # Events.good_guy_entering
     try:
-        # test if we know the person
-        is_known = is_face_known(bucket, key,   'user-faces')
-
         # prepare environment handler
         # SETUP add more environments here
         light = HueWrapper()
@@ -97,16 +69,8 @@ def lambda_handler(event, context):
             'intruder': EnvironmentIntruder(light),
         }
 
-        # call appropiate event on environment handler
-        if is_known:
-            # logging
-            print('[lambda_handler] received face which is known')
-            environment_handler(Events.good_guy_entering, environments)
-
-        else:
-            # logging
-            print('[lambda_handler] received face which is not known')
-            environment_handler(Events.bad_guy_entering, environments)
+        # TODO extract event from input
+        environment_handler(event, environments)
 
     except Exception as e:
         print(e)

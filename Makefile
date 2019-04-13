@@ -15,4 +15,4 @@ zip:
 	zip -g function.zip huepythonrgbconverter/*
 
 upload:
-	aws lambda update-function-code --function-name identityRecognition --zip-file fileb://function.zip
+	aws lambda update-function-code --function-name environmentHandler --zip-file fileb://function.zip
