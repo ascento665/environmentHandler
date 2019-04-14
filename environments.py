@@ -1,5 +1,17 @@
 from abc import abstractmethod
+import boto3
 
+sns = boto3.client('sns')
+
+# TODO send image too
+def notify_app():
+    print 'notifying app'
+    response = sns.publish(
+        TargetArn='arn:aws:sns:eu-west-1:572634146544:endpoint/APNS_SANDBOX/Kevin/c6de9f8c-4410-3878-958a-21c2a328c565',
+        MessageStructure='json',
+        Message={ 'APNS_SANDBOX': '{ "aps": { "alert": { "title": "intruder?", "body": "you tell me!" }, "mutable-content": 1 } }' }
+    )
+    print response
 
 class EnvironmentBase(object):
     """
@@ -62,6 +74,7 @@ class EnvironmentOff(EnvironmentBase):
         return self.activate_environment('normal')
 
     def bad_guy_entering(self):
+        notify_app()
         # turn hue on and red
         return self.activate_environment('intruder')
 
@@ -79,6 +92,7 @@ class EnvironmentNormal(EnvironmentBase):
         return self.activate_environment('normal')
 
     def bad_guy_entering(self):
+        notify_app()
         # turn hue on and red
         return self.activate_environment('intruder')
 
