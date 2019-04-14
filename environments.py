@@ -10,7 +10,7 @@ s3_client = boto3.resource('s3')
 # TODO send image too
 
 
-def notify_app(title, body):
+def notify_app(title, body, bucket, key):
     """
     send a push alert to the app
 
@@ -24,9 +24,8 @@ def notify_app(title, body):
     response = sns.publish(
         TargetArn='arn:aws:sns:eu-west-1:572634146544:endpoint/APNS_SANDBOX/Kevin/c6de9f8c-4410-3878-958a-21c2a328c565',
         MessageStructure='json',
-        Message='{ "APNS_SANDBOX": "{ \\"aps\\": { \\"alert\\": { \\"title\\": \\"intruder?\\", \\"body\\": \\"you tell me!\\" }, \\"mutable-content\\": 1 } }" }'
+        Message='{ "APNS_SANDBOX": "{ \\"aps\\": { \\"alert\\": { \\"title\\": \\"intruder?\\", \\"body\\": \\"you tell me!\\" }, \\"mutable-content\\": 1, \\"test-field\\": \\"{}\\" } }" }'
     )
-    # Message={'APNS_SANDBOX': '{ "aps": { "alert": { "title": "intruder?", "body": "you tell me!" }, "mutable-content": 1 } }'}
 
     print('[notify_app] this is the response: ', response)
     return
@@ -93,18 +92,18 @@ class EnvironmentBase(object):
             self.light.set_color(0, 255, 0)
 
         elif name == 'intruder':
-            self.light.set_mode(1)
-            self.light.set_color(255, 10, 10)
-            # self.light.blink(255, 0, 0, 2, 60)
+            # self.light.set_mode(1)
+            # self.light.set_color(255, 10, 10)
+            self.light.blink(255, 0, 0, 2, 15)
 
         elif name == 'alarm':
             self.light.set_mode(0)
 
         elif name == 'dance':
-            self.light.dance(1, 2, 60)
+            self.light.dance(1, 2, 15)
 
         elif name == 'romantic':
-            self.light.set_color(255, 0, 0)
+            self.light.set_color(100, 0, 0)
 
         else:
             print(
@@ -114,27 +113,27 @@ class EnvironmentBase(object):
         return name
 
     @abstractmethod
-    def good_guy_entering(self):
+    def good_guy_entering(self, bucket, key):
         print('gg entering THIS SHOULD NEVER BE CALLED')
         pass
 
     @abstractmethod
-    def bad_guy_entering(self):
+    def bad_guy_entering(self, bucket, key):
         print('bg entering THIS SHOULD NEVER BE CALLED')
         pass
 
     @abstractmethod
-    def leaving_house(self):
+    def leaving_house(self, bucket, key):
         print('THIS SHOULD NEVER BE CALLED')
         pass
 
     @abstractmethod
-    def requesting_dance_mode(self):
+    def requesting_dance_mode(self, bucket, key):
         print('THIS SHOULD NEVER BE CALLED')
         pass
 
     @abstractmethod
-    def requesting_romantic_mode(self):
+    def requesting_romantic_mode(self, bucket, key):
         print('THIS SHOULD NEVER BE CALLED')
         pass
 
@@ -147,19 +146,19 @@ class EnvironmentOff(EnvironmentBase):
     def __init__(self, light):
         super(EnvironmentOff, self).__init__('off', light)
 
-    def good_guy_entering(self):
+    def good_guy_entering(self, bucket, key):
         return self.activate_environment('normal')
 
-    def bad_guy_entering(self):
+    def bad_guy_entering(self, bucket, key):
         return self.activate_environment('off')
 
-    def leaving_house(self):
+    def leaving_house(self, bucket, key):
         return self.activate_environment('alarm')
 
-    def requesting_dance_mode(self):
+    def requesting_dance_mode(self, bucket, key):
         return self.activate_environment('dance')
 
-    def requesting_romantic_mode(self):
+    def requesting_romantic_mode(self, bucket, key):
         return self.activate_environment('romantic')
 
 
@@ -171,19 +170,19 @@ class EnvironmentNormal(EnvironmentBase):
     def __init__(self, light):
         super(EnvironmentNormal, self).__init__('normal', light)
 
-    def good_guy_entering(self):
+    def good_guy_entering(self, bucket, key):
         return self.activate_environment('normal')
 
-    def bad_guy_entering(self):
+    def bad_guy_entering(self, bucket, key):
         return self.activate_environment('normal')
 
-    def leaving_house(self):
+    def leaving_house(self, bucket, key):
         return self.activate_environment('alarm')
 
-    def requesting_dance_mode(self):
+    def requesting_dance_mode(self, bucket, key):
         return self.activate_environment('dance')
 
-    def requesting_romantic_mode(self):
+    def requesting_romantic_mode(self, bucket, key):
         return self.activate_environment('romantic')
 
 
@@ -195,23 +194,23 @@ class EnvironmentIntruder(EnvironmentBase):
     def __init__(self, light):
         super(EnvironmentIntruder, self).__init__('intruder', light)
 
-    def good_guy_entering(self):
+    def good_guy_entering(self, bucket, key):
         return self.activate_environment('normal')
 
-    def bad_guy_entering(self):
-        notify_app('another intruder?', 'you tell me!')
+    def bad_guy_entering(self, bucket, key):
+        notify_app('another intruder?', 'you tell me!', bucket, key)
         if is_overriden():
             return self.activate_environment('normal')
         else:
             return self.activate_environment('intruder')
 
-    def leaving_house(self):
+    def leaving_house(self, bucket, key):
         return self.activate_environment('alarm')
 
-    def requesting_dance_mode(self):
+    def requesting_dance_mode(self, bucket, key):
         return self.activate_environment('dance')
 
-    def requesting_romantic_mode(self):
+    def requesting_romantic_mode(self, bucket, key):
         return self.activate_environment('romantic')
 
 
@@ -223,23 +222,23 @@ class EnvironmentAlarm(EnvironmentBase):
     def __init__(self, light):
         super(EnvironmentAlarm, self).__init__('alarm', light)
 
-    def good_guy_entering(self):
+    def good_guy_entering(self, bucket, key):
         return self.activate_environment('normal')
 
-    def bad_guy_entering(self):
-        notify_app('intruder?', 'you tell me!')
+    def bad_guy_entering(self, bucket, key):
+        notify_app('intruder?', 'you tell me!', bucket, key)
         if is_overriden():
             return self.activate_environment('normal')
         else:
             return self.activate_environment('intruder')
 
-    def leaving_house(self):
+    def leaving_house(self, bucket, key):
         return self.activate_environment('alarm')
 
-    def requesting_dance_mode(self):
+    def requesting_dance_mode(self, bucket, key):
         return self.activate_environment('dance')
 
-    def requesting_romantic_mode(self):
+    def requesting_romantic_mode(self, bucket, key):
         return self.activate_environment('romantic')
 
 
@@ -251,21 +250,21 @@ class EnvironmentDance(EnvironmentBase):
     def __init__(self, light):
         super(EnvironmentDance, self).__init__('dance', light)
 
-    def good_guy_entering(self):
+    def good_guy_entering(self, bucket, key):
         # turn hue on and green
         return self.activate_environment('dance')
 
-    def bad_guy_entering(self):
+    def bad_guy_entering(self, bucket, key):
         # turn hue on and red
         return self.activate_environment('dance')
 
-    def leaving_house(self):
+    def leaving_house(self, bucket, key):
         return self.activate_environment('alarm')
 
-    def requesting_dance_mode(self):
+    def requesting_dance_mode(self, bucket, key):
         return self.activate_environment('dance')
 
-    def requesting_romantic_mode(self):
+    def requesting_romantic_mode(self, bucket, key):
         return self.activate_environment('romantic')
 
 
@@ -277,19 +276,19 @@ class EnvironmentRomantic(EnvironmentBase):
     def __init__(self, light):
         super(EnvironmentRomantic, self).__init__('romantic', light)
 
-    def good_guy_entering(self):
-        notify_app('watch out!', 'a known intruder!')
+    def good_guy_entering(self, bucket, key):
+        notify_app('watch out!', 'a known intruder!', bucket, key)
         return self.activate_environment('intruder')
 
-    def bad_guy_entering(self):
-        notify_app('watch out!', 'an unknown intruder!')
+    def bad_guy_entering(self, bucket, key):
+        notify_app('watch out!', 'an unknown intruder!', bucket, key)
         return self.activate_environment('intruder')
 
-    def leaving_house(self):
+    def leaving_house(self, bucket, key):
         return self.activate_environment('alarm')
 
-    def requesting_dance_mode(self):
+    def requesting_dance_mode(self, bucket, key):
         return self.activate_environment('dance')
 
-    def requesting_romantic_mode(self):
+    def requesting_romantic_mode(self, bucket, key):
         return self.activate_environment('romantic')

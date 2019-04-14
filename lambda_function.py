@@ -14,7 +14,7 @@ s3 = boto3.resource('s3')
 # ------------ Helper Functions ---------------
 
 
-def environment_handler(event, environments):
+def environment_handler(event, environments, bucket, key):
     """
     main event handling function of state machine
 
@@ -36,7 +36,7 @@ def environment_handler(event, environments):
 
     # call the transition function form the currently active environment
     new_active_env_name = environments[old_active_env_name].transitions[event.name](
-    )
+        bucket, key)
 
     # update the active state and save to json in s3
     json_content['active_env'] = new_active_env_name
@@ -56,9 +56,19 @@ def lambda_handler(event, context):
     '''
 
     # extract event from payload
+    print('incoming event', event)
+
+    bucket = 'None'
+    key = 'None'
+
+    try:
+        bucket = event['bucket']
+        key = event['key']
+    except Exception as e:
+        pass
+
     event = Events[event['event']]
 
-    # Events.good_guy_entering
     try:
         # prepare environment handler
         # SETUP add more environments here
@@ -73,7 +83,7 @@ def lambda_handler(event, context):
         }
 
         # handle event with state transitions
-        environment_handler(event, environments)
+        environment_handler(event, environments, bucket, key)
 
     except Exception as e:
         print(e)

@@ -1,0 +1,9 @@
+let invocationRequest = AWSLambdaInvokerInvocationRequest()
+    invocationRequest.functionName = "environmentHandler"
+    invocationRequest.invocationType = AWSLambdaInvocationType.RequestResponse
+    invocationRequest.payload = ["event" : "requesting_dance_mode"]
+
+    let lambdaInvoker = AWSLambdaInvoker.defaultLambdaInvoker()
+    let task = lambdaInvoker.invoke(invocationRequest).continueWithSuccessBlock() { (task) -> AWSTask! in
+        print("response: ", task.result)
+    }
