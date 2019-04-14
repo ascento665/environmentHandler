@@ -67,9 +67,11 @@ def lambda_handler(event, context):
             'off': EnvironmentOff(light),
             'normal': EnvironmentNormal(light),
             'intruder': EnvironmentIntruder(light),
+            'dance': EnvironmentDance(light),
+            'romantic': EnvironmentRomantic(light),
         }
 
-        # TODO extract event from input
+        # handle event with state transitions
         environment_handler(event, environments)
 
     except Exception as e:
