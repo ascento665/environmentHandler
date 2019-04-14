@@ -1,17 +1,32 @@
 from abc import abstractmethod
+
 import boto3
 
 sns = boto3.client('sns')
 
 # TODO send image too
-def notify_app():
-    print 'notifying app'
+
+
+def notify_app(title, body):
+    """
+    send a push alert to the app
+
+    Arguments
+    ---------
+    title (string): title of the push alert
+    body (string): body of the push alert
+    """
+    print('[notify_app] notifying app')
+
     response = sns.publish(
         TargetArn='arn:aws:sns:eu-west-1:572634146544:endpoint/APNS_SANDBOX/Kevin/c6de9f8c-4410-3878-958a-21c2a328c565',
         MessageStructure='json',
-        Message={ 'APNS_SANDBOX': '{ "aps": { "alert": { "title": "intruder?", "body": "you tell me!" }, "mutable-content": 1 } }' }
+        Message='{ "APNS_SANDBOX": "{ \\"aps\\": { \\"alert\\": { \\"title\\": \\"intruder?\\", \\"body\\": \\"you tell me!\\" }, \\"mutable-content\\": 1 } }" }'
     )
-    print response
+    # Message={'APNS_SANDBOX': '{ "aps": { "alert": { "title": "intruder?", "body": "you tell me!" }, "mutable-content": 1 } }'}
+
+    print('[notify_app] this is the response: ', response)
+
 
 class EnvironmentBase(object):
     """
@@ -46,9 +61,20 @@ class EnvironmentBase(object):
             self.light.set_color(0, 255, 0)
 
         elif name == 'intruder':
+            self.light.blink(255, 0, 0, 2, 60)
+
+        elif name == 'alarm':
+            self.light.set_mode(0)
+
+        elif name == 'dance':
+            self.light.dance(1, 2, 60)
+
+        elif name == 'romantic':
             self.light.set_color(255, 0, 0)
 
         else:
+            print(
+                '[EnvironmentBase.activate_environment] env string <{}> not found'.format(name))
             raise Exception(
                 '[EnvironmentBase.activate_environment] unknown environment')
         return name
@@ -88,12 +114,9 @@ class EnvironmentOff(EnvironmentBase):
         super(EnvironmentOff, self).__init__('off', light)
 
     def good_guy_entering(self):
-        # turn hue on and green
         return self.activate_environment('normal')
 
     def bad_guy_entering(self):
-        notify_app()
-        # turn hue on and red
         return self.activate_environment('off')
 
     def leaving_house(self):
@@ -115,12 +138,9 @@ class EnvironmentNormal(EnvironmentBase):
         super(EnvironmentNormal, self).__init__('normal', light)
 
     def good_guy_entering(self):
-        # turn hue on and green
         return self.activate_environment('normal')
 
     def bad_guy_entering(self):
-        notify_app()
-        # turn hue on and red
         return self.activate_environment('normal')
 
     def leaving_house(self):
@@ -142,11 +162,35 @@ class EnvironmentIntruder(EnvironmentBase):
         super(EnvironmentIntruder, self).__init__('intruder', light)
 
     def good_guy_entering(self):
-        # turn hue on and green
         return self.activate_environment('normal')
 
     def bad_guy_entering(self):
-        # turn hue on and red
+        notify_app('intruder?', 'you tell me!')
+        return self.activate_environment('intruder')
+
+    def leaving_house(self):
+        return self.activate_environment('alarm')
+
+    def requesting_dance_mode(self):
+        return self.activate_environment('dance')
+
+    def requesting_romantic_mode(self):
+        return self.activate_environment('romantic')
+
+
+class EnvironmentAlarm(EnvironmentBase):
+    """
+    the alarm environment
+    """
+
+    def __init__(self, light):
+        super(EnvironmentAlarm, self).__init__('alarm', light)
+
+    def good_guy_entering(self):
+        return self.activate_environment('normal')
+
+    def bad_guy_entering(self):
+        notify_app('intruder?', 'you tell me!')
         return self.activate_environment('intruder')
 
     def leaving_house(self):
@@ -194,11 +238,11 @@ class EnvironmentRomantic(EnvironmentBase):
         super(EnvironmentRomantic, self).__init__('romantic', light)
 
     def good_guy_entering(self):
-        # turn hue on and green
+        notify_app('intruder?', 'you tell me!')
         return self.activate_environment('intruder')
 
     def bad_guy_entering(self):
-        # turn hue on and red
+        notify_app('intruder?', 'you tell me!')
         return self.activate_environment('intruder')
 
     def leaving_house(self):

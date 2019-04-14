@@ -3,7 +3,9 @@ import urllib
 from decimal import Decimal
 
 import boto3
-from environments import EnvironmentIntruder, EnvironmentNormal, EnvironmentOff
+from environments import (EnvironmentAlarm, EnvironmentDance,
+                          EnvironmentIntruder, EnvironmentNormal,
+                          EnvironmentOff, EnvironmentRomantic)
 from events import Events
 from hue_wrapper_v1 import HueWrapperV1 as HueWrapper
 
@@ -42,8 +44,8 @@ def environment_handler(event, environments):
         json_content, indent=2).encode('utf-8')))
 
     # logging
-    print('[environment_handler] changed env from {} to {}'.format(
-        old_active_env_name, new_active_env_name))
+    print('[environment_handler] changed env from {} to {} after event {}'.format(
+        old_active_env_name, new_active_env_name, event.name))
 
     return
 
@@ -54,9 +56,7 @@ def lambda_handler(event, context):
     '''
 
     # extract event from payload
-    print('the event:', event)
     event = Events[event['event']]
-    print('the new event:', event)
 
     # Events.good_guy_entering
     try:
@@ -67,6 +67,7 @@ def lambda_handler(event, context):
             'off': EnvironmentOff(light),
             'normal': EnvironmentNormal(light),
             'intruder': EnvironmentIntruder(light),
+            'alarm': EnvironmentAlarm(light),
             'dance': EnvironmentDance(light),
             'romantic': EnvironmentRomantic(light),
         }
