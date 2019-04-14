@@ -1,8 +1,11 @@
+import json
+import time
 from abc import abstractmethod
 
 import boto3
 
 sns = boto3.client('sns')
+s3_client = boto3.resource('s3')
 
 # TODO send image too
 
@@ -26,6 +29,34 @@ def notify_app(title, body):
     # Message={'APNS_SANDBOX': '{ "aps": { "alert": { "title": "intruder?", "body": "you tell me!" }, "mutable-content": 1 } }'}
 
     print('[notify_app] this is the response: ', response)
+    return
+
+
+def is_overriden():
+    override_allowed = False
+    for i in range(20):  # PARAMETER
+        # check if true
+        state_object = s3_client.Object(
+            'asc-user-db', 'state-info/override.json')
+        file_content = state_object.get()['Body'].read().decode('utf-8')
+        json_content = json.loads(file_content)
+        # returns a string containing the name
+        override_allowed = (json_content['override'] == 'true')
+
+        if(override_allowed):
+            # logging
+            print('[is_overriden] detected override')
+            # update the active state and save to json in s3
+            json_content['override'] = 'false'
+            state_object.put(Body=bytes(json.dumps(
+                json_content, indent=2).encode('utf-8')))
+            return True
+
+        time.sleep(1)
+
+    # logging
+    print('[is_overriden] was not overriden, changing to intruder env')
+    return False
 
 
 class EnvironmentBase(object):
@@ -58,10 +89,13 @@ class EnvironmentBase(object):
             self.light.set_mode(0)
 
         elif name == 'normal':
+            self.light.set_mode(1)
             self.light.set_color(0, 255, 0)
 
         elif name == 'intruder':
-            self.light.blink(255, 0, 0, 2, 60)
+            self.light.set_mode(1)
+            self.light.set_color(255, 10, 10)
+            # self.light.blink(255, 0, 0, 2, 60)
 
         elif name == 'alarm':
             self.light.set_mode(0)
@@ -165,8 +199,11 @@ class EnvironmentIntruder(EnvironmentBase):
         return self.activate_environment('normal')
 
     def bad_guy_entering(self):
-        notify_app('intruder?', 'you tell me!')
-        return self.activate_environment('intruder')
+        notify_app('another intruder?', 'you tell me!')
+        if is_overriden():
+            return self.activate_environment('normal')
+        else:
+            return self.activate_environment('intruder')
 
     def leaving_house(self):
         return self.activate_environment('alarm')
@@ -191,7 +228,10 @@ class EnvironmentAlarm(EnvironmentBase):
 
     def bad_guy_entering(self):
         notify_app('intruder?', 'you tell me!')
-        return self.activate_environment('intruder')
+        if is_overriden():
+            return self.activate_environment('normal')
+        else:
+            return self.activate_environment('intruder')
 
     def leaving_house(self):
         return self.activate_environment('alarm')
@@ -238,11 +278,11 @@ class EnvironmentRomantic(EnvironmentBase):
         super(EnvironmentRomantic, self).__init__('romantic', light)
 
     def good_guy_entering(self):
-        notify_app('intruder?', 'you tell me!')
+        notify_app('watch out!', 'a known intruder!')
         return self.activate_environment('intruder')
 
     def bad_guy_entering(self):
-        notify_app('intruder?', 'you tell me!')
+        notify_app('watch out!', 'an unknown intruder!')
         return self.activate_environment('intruder')
 
     def leaving_house(self):
